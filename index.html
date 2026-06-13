@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tarco ReConnect | منظومة تاركو لإعادة التواصل والمطابقة</title>
+  <meta name="description" content="منظومة تاركو لإعادة التواصل والمطابقة للحقائب المفقودة في مطارات تاركو للطيران" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:    { DEFAULT: '#0B3C5D', light: '#0d4a75', dark: '#082d45', xdark: '#051e2e' },
+            sky:     { DEFAULT: '#328CC1', light: '#4aa3d9', dark: '#2474a8' },
+            success: { DEFAULT: '#2ecc71', light: '#3de07f', dark: '#27ae60' },
+            warn:    { DEFAULT: '#f39c12', light: '#f5b942' },
+            danger:  { DEFAULT: '#e74c3c', light: '#ff6b5e' },
+            bg:      { DEFAULT: '#F4F6F9', card: '#FFFFFF' },
+          },
+          fontFamily: {
+            arabic: ['Cairo', 'Tajawal', 'sans-serif'],
+          },
+          boxShadow: {
+            card: '0 4px 24px rgba(11,60,93,0.10)',
+            'card-hover': '0 8px 32px rgba(11,60,93,0.18)',
+            glow: '0 0 24px rgba(50,140,193,0.35)',
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.4s ease',
+            'slide-in': 'slideIn 0.35s ease',
+            'pulse-slow': 'pulse 2.5s cubic-bezier(0.4,0,0.6,1) infinite',
+            'badge': 'badgePop 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+          },
+          keyframes: {
+            fadeIn: { from: { opacity: 0, transform: 'translateY(10px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
+            slideIn: { from: { opacity: 0, transform: 'translateX(24px)' }, to: { opacity: 1, transform: 'translateX(0)' } },
+            badgePop: { from: { transform: 'scale(0.7)' }, to: { transform: 'scale(1)' } },
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Cairo', 'Tajawal', sans-serif; background: #F4F6F9; direction: rtl; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #e8edf3; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #328CC1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #0B3C5D; }
+
+    .glass {
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .header-gradient {
+      background: linear-gradient(135deg, #0B3C5D 0%, #1a5b8e 50%, #328CC1 100%);
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.13);
+      border: 1px solid rgba(255,255,255,0.22);
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease;
+    }
+    .stat-card:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+
+    .bag-row {
+      transition: all 0.22s ease;
+      border-right: 3px solid transparent;
+      cursor: pointer;
+    }
+    .bag-row:hover { background: rgba(50,140,193,0.07) !important; border-right-color: #328CC1; }
+    .bag-row.selected { background: rgba(50,140,193,0.13) !important; border-right-color: #0B3C5D; }
+    .bag-row.delivered { opacity: 0.62; }
+
+    .match-card {
+      transition: all 0.28s ease;
+      border: 1px solid #e2e8f0;
+    }
+    .match-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(11,60,93,0.15); border-color: #328CC1; }
+
+    .score-bar { transition: width 0.7s cubic-bezier(0.34,1.56,0.64,1); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0B3C5D, #328CC1);
+      transition: all 0.25s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(11,60,93,0.35); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-success {
+      background: linear-gradient(135deg, #27ae60, #2ecc71);
+      transition: all 0.25s ease;
+    }
+    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(46,204,113,0.4); }
+
+    .btn-whatsapp {
+      background: linear-gradient(135deg, #128C7E, #25D366);
+      transition: all 0.25s ease;
+    }
+    .btn-whatsapp:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37,211,102,0.4); }
+
+    .filter-chip {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .filter-chip.active { background: #0B3C5D; color: white; }
+    .filter-chip:not(.active):hover { background: #e2e8f0; }
+
+    .ai-scanner {
+      background: linear-gradient(135deg, rgba(11,60,93,0.06) 0%, rgba(50,140,193,0.06) 100%);
+      border: 2px dashed #328CC1;
+      position: relative;
+      overflow: hidden;
+    }
+    .ai-scanner::before {
+      content: '';
+      position: absolute;
+      top: -100%;
+      left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #328CC1, transparent);
+      animation: scanLine 2.5s ease-in-out infinite;
+    }
+    @keyframes scanLine {
+      0% { top: -5%; }
+      50% { top: 105%; }
+      100% { top: -5%; }
+    }
+
+    .modal-overlay {
+      background: rgba(11,30,50,0.6);
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-box { animation: slideIn 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+
+    .badge-delivered {
+      background: linear-gradient(90deg, #27ae60, #2ecc71);
+      color: white;
+    }
+    .badge-warehouse {
+      background: linear-gradient(90deg, #e8f4fd, #d0eaf7);
+      color: #0B3C5D;
+    }
+
+    .tab-btn { transition: all 0.2s ease; border-bottom: 3px solid transparent; }
+    .tab-btn.active { border-bottom-color: #328CC1; color: #0B3C5D; font-weight: 700; }
+
+    .notification {
+      animation: slideIn 0.3s ease, fadeOut 0.4s ease 2.8s forwards;
+    }
+    @keyframes fadeOut { to { opacity: 0; transform: translateX(40px); } }
+
+    .counter-badge {
+      animation: badgePop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      display: inline-block;
+    }
+
+    .pagination-btn {
+      transition: all 0.2s ease;
+    }
+    .pagination-btn:hover:not(:disabled) { background: #328CC1; color: white; }
+    .pagination-btn.active { background: #0B3C5D; color: white; }
+    .pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .empty-state { animation: fadeIn 0.5s ease; }
+
+    .progress-ring { transform: rotate(-90deg); }
+    .progress-ring-circle { transition: stroke-dashoffset 0.8s cubic-bezier(0.34,1.56,0.64,1); }
+
+    @media (max-width: 1024px) {
+      .main-grid { grid-template-columns: 1fr !important; }
+      .right-panel { max-height: 480px; overflow-y: auto; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-bg font-arabic">
+
+<!-- =================== HEADER =================== -->
+<header class="header-gradient shadow-2xl sticky top-0 z-50">
+  <div class="max-w-screen-2xl mx-auto px-4 py-3">
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+
+      <!-- Logo & Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-16 h-12 rounded-xl bg-white/10 p-1 border border-white/20 flex items-center justify-center shadow-lg overflow-hidden">
+          <img src="logo.png" alt="Tarco Logo" class="h-full object-contain" />
+        </div>
+        <div>
+          <h1 class="text-white font-black text-xl leading-tight tracking-wide">Tarco ReConnect</h1>
+          <p class="text-sky-200 text-xs font-medium">منظومة إعادة التواصل والمطابقة</p>
+        </div>
+      </div>
+
+      <!-- Stats Bar -->
+      <div class="flex items-center gap-3 flex-wrap">
+        <div class="stat-card rounded-xl px-4 py-2 text-center min-w-[100px]">
+          <div class="text-white/70 text-xs font-medium mb-0.5">إجمالي الحقائب</div>
+          <div class="text-white font-black text-xl" id="stat-total">400</div>
+        </div>
+        <div class="stat-card rounded-xl px-4 py-2 text-center min-w-[100px]">
+          <div class="text-success-light text-xs font-medium mb-0.5">✅ تم التسليم</div>
+          <div class="text-success font-black text-xl counter-badge" id="stat-delivered">0</div>
+        </div>
+        <div class="stat-card rounded-xl px-4 py-2 text-center min-w-[100px]">
+          <div class="text-warn-light text-xs font-medium mb-0.5">⏳ المتبقي</div>
+          <div class="text-warn font-black text-xl" id="stat-remaining">400</div>
+        </div>
+        <div class="stat-card rounded-xl px-4 py-2 text-center min-w-[100px]">
+          <div class="text-sky-200 text-xs font-medium mb-0.5">📋 البلاغات</div>
+          <div class="text-white font-black text-xl" id="stat-claims">15</div>
+        </div>
+
+        <!-- Progress Ring -->
+        <div class="flex items-center gap-2 stat-card rounded-xl px-4 py-2">
+          <svg width="48" height="48" class="progress-ring">
+            <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="4"/>
+            <circle id="progress-ring-circle" cx="24" cy="24" r="20" fill="none"
+              stroke="#2ecc71" stroke-width="4" stroke-linecap="round"
+              stroke-dasharray="125.66" stroke-dashoffset="125.66"
+              class="progress-ring-circle"/>
+          </svg>
+          <div>
+            <div class="text-white/70 text-xs">الإنجاز</div>
+            <div class="text-white font-black text-lg" id="stat-percent">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2">
+        <button onclick="showWhatsAppModal()" class="btn-whatsapp text-white font-bold text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-lg">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp API
+        </button>
+        <button onclick="exportData()" class="btn-primary text-white font-bold text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-lg">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          تصدير التقرير
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- =================== MAIN LAYOUT =================== -->
+<main class="max-w-screen-2xl mx-auto px-4 py-5">
+  <div class="main-grid grid gap-5" style="grid-template-columns: 60% 40%;">
+
+    <!-- ===== LEFT PANEL: BAG TABLE ===== -->
+    <div class="space-y-4">
+
+      <!-- Search & Filters -->
+      <div class="bg-white rounded-2xl shadow-card p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-navy font-black text-base flex items-center gap-2">
+            <span class="w-7 h-7 bg-sky/10 rounded-lg flex items-center justify-center">
+              <svg class="w-4 h-4 text-sky" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </span>
+            قائمة الحقائب المفقودة
+          </h2>
+          <span class="text-navy/50 text-xs font-medium bg-bg px-3 py-1 rounded-full" id="showing-label">عرض 400 حقيبة</span>
+        </div>
+
+        <!-- Search & Advanced Filters Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <!-- Text Search -->
+          <div class="relative md:col-span-2">
+            <input id="search-input" type="text" placeholder="ابحث بالاسم، الرحلة، أو المادة..."
+              oninput="applyFilters()"
+              class="w-full bg-bg border border-slate-200 rounded-xl py-2.5 pr-10 pl-4 text-navy text-sm font-medium outline-none focus:border-sky focus:ring-2 focus:ring-sky/20 transition-all" />
+            <svg class="w-4 h-4 text-navy/40 absolute top-3.5 right-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <!-- ID Search -->
+          <div>
+            <input id="search-id" type="text" placeholder="رقم الحقيبة (مثال: TRC-REC-001)"
+              oninput="applyFilters()"
+              class="w-full bg-bg border border-slate-200 rounded-xl py-2.5 px-3 text-navy text-sm font-medium outline-none focus:border-sky focus:ring-2 focus:ring-sky/20 transition-all" />
+          </div>
+        </div>
+
+        <!-- Row 2: Advanced dropdowns (Size & Weight) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <!-- Flight -->
+          <div>
+            <label class="text-navy/50 text-[10px] font-bold block mb-1">الرحلة:</label>
+            <select id="flight-filter" onchange="applyFilters()" class="w-full bg-bg border border-slate-200 rounded-xl py-2 px-3 text-navy text-xs font-semibold outline-none focus:border-sky transition-all">
+              <option value="الكل">كل الرحلات</option>
+              <option value="3G 410">3G 410 - جدة</option>
+              <option value="3G 202">3G 202 - الرياض</option>
+              <option value="3G 105">3G 105 - الخرطوم</option>
+              <option value="3G 770">3G 770 - دبي</option>
+              <option value="3G 315">3G 315 - القاهرة</option>
+              <option value="3G 580">3G 580 - بيروت</option>
+            </select>
+          </div>
+          <!-- Size -->
+          <div>
+            <label class="text-navy/50 text-[10px] font-bold block mb-1">حجم الحقيبة:</label>
+            <select id="size-filter" onchange="applyFilters()" class="w-full bg-bg border border-slate-200 rounded-xl py-2 px-3 text-navy text-xs font-semibold outline-none focus:border-sky transition-all">
+              <option value="الكل">كل الأحجام</option>
+              <option value="صغيرة">صغيرة</option>
+              <option value="متوسطة">متوسطة</option>
+              <option value="كبيرة">كبيرة</option>
+            </select>
+          </div>
+          <!-- Weight Range -->
+          <div>
+            <label class="text-navy/50 text-[10px] font-bold block mb-1">الوزن الأقصى (كجم):</label>
+            <select id="weight-filter" onchange="applyFilters()" class="w-full bg-bg border border-slate-200 rounded-xl py-2 px-3 text-navy text-xs font-semibold outline-none focus:border-sky transition-all">
+              <option value="الكل">كل الأوزان</option>
+              <option value="15">أقل من 15 كجم</option>
+              <option value="20">أقل من 20 كجم</option>
+              <option value="25">أقل من 25 كجم</option>
+              <option value="30">أقل من 30 كجم</option>
+              <option value="35">أقل من 35 كجم</option>
+            </select>
+          </div>
+          <!-- Status -->
+          <div>
+            <label class="text-navy/50 text-[10px] font-bold block mb-1">الحالة:</label>
+            <select id="status-filter" onchange="applyFilters()" class="w-full bg-bg border border-slate-200 rounded-xl py-2 px-3 text-navy text-xs font-semibold outline-none focus:border-sky transition-all">
+              <option value="الكل">كل الحالات</option>
+              <option value="في المستودع">في المستودع</option>
+              <option value="تم التسليم">تم التسليم</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Color Filter Chips -->
+        <div>
+          <p class="text-navy/60 text-xs font-semibold mb-1.5">تصفية حسب اللون:</p>
+          <div class="flex flex-wrap gap-1.5" id="color-filters">
+            <span class="filter-chip active text-xs font-bold px-3 py-1.5 rounded-full border border-slate-200" data-color="الكل" onclick="setColorFilter('الكل', this)">الكل</span>
+            <span class="filter-chip text-xs font-bold px-3 py-1.5 rounded-full border border-slate-200 flex items-center gap-1" data-color="أسود" onclick="setColorFilter('أسود', this)"><span class="w-2.5 h-2.5 rounded-full bg-gray-900 inline-block"></span> أسود</span>
+            <span class="filter-chip text-xs font-bold px-3 py-1.5 rounded-full border border-slate-200 flex items-center gap-1" data-color="أزرق داكن" onclick="setColorFilter('أزرق داكن', this)"><span class="w-2.5 h-2.5 rounded-full bg-blue-900 inline-block"></span> أزرق داكن</span>
+            <span class="filter-chip text-xs font-bold px-3 py-1.5 rounded-full border border-slate-200 flex items-center gap-1" data-color="أحمر" onclick="setColorFilter('أحمر', this)"><span class="w-2.5 h-2.5 rounded-full bg-red-600 inline-block"></span> أحمر</span>
+            <span class="filter-chip text-xs font-bold px-3 py-1.5 rounded-full border border-slate-200 flex items-center gap-1" data-color="رمادي" onclick="setColorFilter('رمادي', this)"><span class="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block"></span> رمادي</span>
+            <span class="filter-chip text-xs font-bold px-3 py-1.5 rounded-full border border-slate-200 flex items-center gap-1" data-color="بني" onclick="setColorFilter('بني', this)"><span class="w-2.5 h-2.5 rounded-full bg-amber-800 inline-block"></span> بني</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bags Table -->
+      <div class="bg-white rounded-2xl shadow-card overflow-hidden">
+        <!-- Table Header -->
+        <div class="grid text-xs font-black text-white uppercase px-4 py-3" style="grid-template-columns: 0.6fr 1.4fr 1.7fr 1fr 1fr 1fr 1.2fr; background: linear-gradient(135deg,#0B3C5D,#328CC1);">
+          <span>الصورة</span>
+          <span>رقم الحقيبة</span>
+          <span>الرحلة المقدَّرة</span>
+          <span>اللون</span>
+          <span>المادة</span>
+          <span>الوزن</span>
+          <span>الحالة</span>
+        </div>
+        <!-- Table Body -->
+        <div id="bags-table-body" class="divide-y divide-slate-50 overflow-y-auto" style="max-height: 480px;">
+          <!-- Rows rendered by JS -->
+        </div>
+        <!-- Pagination -->
+        <div class="border-t border-slate-100 px-4 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-1.5" id="pagination-btns"></div>
+          <span class="text-navy/50 text-xs font-medium" id="page-info">صفحة 1 من 20</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RIGHT PANEL: MATCH DETAILS ===== -->
+    <div class="space-y-4 right-panel">
+
+      <!-- Smart Match Panel -->
+      <div class="bg-white rounded-2xl shadow-card overflow-hidden" id="match-panel">
+        <!-- Default State -->
+        <div id="match-default" class="p-6 text-center animate-fade-in">
+          <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-sky/10 flex items-center justify-center">
+            <svg class="w-10 h-10 text-sky" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+          </div>
+          <h3 class="text-navy font-black text-base mb-1">محرك المطابقة الذكي</h3>
+          <p class="text-navy/50 text-sm font-medium">اختر حقيبة من القائمة لعرض<br/>أفضل المطابقات من بلاغات الركاب</p>
+          <div class="mt-5 grid grid-cols-3 gap-2 text-center">
+            <div class="bg-bg rounded-xl p-3">
+              <div class="text-sky font-black text-lg">50%</div>
+              <div class="text-navy/50 text-xs">تطابق الرحلة</div>
+            </div>
+            <div class="bg-bg rounded-xl p-3">
+              <div class="text-sky font-black text-lg">30%</div>
+              <div class="text-navy/50 text-xs">تطابق اللون</div>
+            </div>
+            <div class="bg-bg rounded-xl p-3">
+              <div class="text-sky font-black text-lg">20%</div>
+              <div class="text-navy/50 text-xs">تطابق المادة</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Match Result State (hidden initially) -->
+        <div id="match-result" class="hidden">
+          <!-- Selected Bag Info -->
+          <div class="p-4" style="background: linear-gradient(135deg,#0B3C5D,#1a5b8e);">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-white font-black text-sm">الحقيبة المحددة</h3>
+              <button onclick="clearSelection()" class="text-white/60 hover:text-white text-xs font-medium transition-colors">✕ إلغاء</button>
+            </div>
+            <div id="selected-bag-info" class="grid grid-cols-2 gap-2"></div>
+          </div>
+
+          <!-- Matches List -->
+          <div class="p-4">
+            <h3 class="text-navy font-black text-sm mb-3 flex items-center gap-2">
+              <span class="w-6 h-6 bg-sky/10 rounded-lg flex items-center justify-center">🎯</span>
+              أفضل المطابقات من بلاغات PIR
+            </h3>
+            <div id="matches-list" class="space-y-3 max-h-72 overflow-y-auto pr-1"></div>
+          </div>
+
+          <!-- Confirm Button -->
+          <div class="px-4 pb-4">
+            <button id="confirm-btn" onclick="confirmDelivery()" class="btn-success w-full text-white font-black text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              تأكيد المطابقة والتسليم عبر Tarco ReConnect ✅
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Scanner Placeholder -->
+      <div class="bg-white rounded-2xl shadow-card p-4">
+        <h3 class="text-navy font-black text-sm mb-3 flex items-center gap-2">
+          <span class="text-base">🤖</span>
+          الماسح البصري الذكي للحقائب AI
+        </h3>
+        <div class="ai-scanner rounded-xl p-5 text-center">
+          <div class="w-14 h-14 mx-auto mb-3 rounded-xl bg-sky/10 flex items-center justify-center">
+            <svg class="w-8 h-8 text-sky" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <p class="text-navy/70 font-bold text-sm mb-1">قيد التطوير</p>
+          <p class="text-navy/40 text-xs mb-3">قريباً: مسح الحقيبة بالكاميرا للتعرف التلقائي على اللون والمادة والعلامات</p>
+          <button onclick="showAIModal()" class="btn-primary text-white text-xs font-bold px-5 py-2 rounded-xl">تجربة النظام التجريبي</button>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="bg-white rounded-2xl shadow-card p-4">
+        <h3 class="text-navy font-black text-sm mb-3 flex items-center gap-2">
+          <span>📊</span> إحصائيات سريعة
+        </h3>
+        <div class="space-y-2" id="quick-stats"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- =================== NOTIFICATION TOAST =================== -->
+<div id="notification-container" class="fixed top-20 left-4 z-[200] space-y-2 pointer-events-none"></div>
+
+<!-- =================== MODALS =================== -->
+
+<!-- WhatsApp Modal -->
+<div id="whatsapp-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center modal-overlay p-4" onclick="closeModal('whatsapp-modal')">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-navy font-black text-lg flex items-center gap-2">
+        <span class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#128C7E,#25D366)">
+          <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </span>
+        بوابة Tarco ReConnect للـ WhatsApp API
+      </h3>
+      <button onclick="closeModal('whatsapp-modal')" class="text-navy/40 hover:text-navy text-xl font-bold transition-colors">✕</button>
+    </div>
+    <div class="space-y-4">
+      <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+        <p class="text-green-800 font-bold text-sm mb-1">✅ النظام جاهز للإرسال</p>
+        <p class="text-green-700 text-xs">سيتم إرسال رابط كتالوج الحقائب لجميع الركاب الذين تقدموا ببلاغات PIR</p>
+      </div>
+      <div class="space-y-2">
+        <label class="text-navy/60 text-xs font-semibold">نموذج الرسالة:</label>
+        <div class="bg-bg rounded-xl p-3 text-xs text-navy/70 font-medium leading-relaxed border border-slate-100">
+          🎒 <strong>Tarco ReConnect | تاركو لإعادة التواصل</strong><br/><br/>
+          عزيزي المسافر، لدينا حقيبة تتطابق مع وصفك.<br/>
+          يرجى الضغط على الرابط لمشاهدة الكتالوج:<br/>
+          <span class="text-sky font-bold">https://reconnect.tarco.aero/catalog/[FLIGHT_NO]</span><br/><br/>
+          📞 للاستفسار: <strong>1800-TARCO-REC</strong>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-xs text-center">
+        <div class="bg-bg rounded-xl p-3">
+          <div class="text-sky font-black text-lg" id="modal-claims-count">15</div>
+          <div class="text-navy/50">راكب سيُبلَّغ</div>
+        </div>
+        <div class="bg-bg rounded-xl p-3">
+          <div class="text-success font-black text-lg">~2 دقيقة</div>
+          <div class="text-navy/50">وقت الإرسال</div>
+        </div>
+      </div>
+      <button onclick="sendWhatsApp()" class="btn-whatsapp w-full text-white font-black py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        إرسال الكتالوج لجميع الركاب الآن
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- AI Modal -->
+<div id="ai-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center modal-overlay p-4" onclick="closeModal('ai-modal')">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-navy font-black text-lg flex items-center gap-2">
+        <span class="text-xl">🤖</span>
+        الماسح البصري الذكي AI
+      </h3>
+      <button onclick="closeModal('ai-modal')" class="text-navy/40 hover:text-navy text-xl font-bold transition-colors">✕</button>
+    </div>
+    <div class="space-y-4">
+      <div class="bg-sky/5 border border-sky/20 rounded-xl p-4 text-center">
+        <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-sky/10 flex items-center justify-center">
+          <svg class="w-9 h-9 text-sky" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <p class="text-navy font-bold text-sm">وحدة Vision AI - مرحلة تجريبية</p>
+        <p class="text-navy/50 text-xs mt-1">الدقة الحالية: <strong class="text-success">87.4%</strong> في التعرف على اللون والمادة</p>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-center text-xs">
+        <div class="bg-bg rounded-xl p-3"><div class="text-2xl mb-1">🎨</div><div class="text-navy font-bold">اللون</div><div class="text-success font-black">92%</div></div>
+        <div class="bg-bg rounded-xl p-3"><div class="text-2xl mb-1">🧳</div><div class="text-navy font-bold">المادة</div><div class="text-sky font-black">84%</div></div>
+        <div class="bg-bg rounded-xl p-3"><div class="text-2xl mb-1">📏</div><div class="text-navy font-bold">الحجم</div><div class="text-warn font-black">78%</div></div>
+      </div>
+      <div class="bg-warn/5 border border-warn/20 rounded-xl p-3">
+        <p class="text-warn-light font-bold text-xs">⚠️ قيد التطوير</p>
+        <p class="text-navy/60 text-xs mt-1">هذه الميزة قيد التطوير وستُتاح في النسخة 2.0 من المنظومة. وقت الإطلاق المتوقع: Q3 2025</p>
+      </div>
+      <button onclick="closeModal('ai-modal'); showNotification('تم تسجيل اهتمامك بنظام AI Scanner! سيتم إبلاغك عند الإطلاق.', 'info')" class="btn-primary w-full text-white font-black py-3 rounded-xl">
+        تسجيل الاهتمام للتجربة المبكرة
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delivery Confirmation Modal -->
+<div id="confirm-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center modal-overlay p-4" onclick="closeModal('confirm-modal')">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+    <div class="text-center mb-5">
+      <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-success/10 flex items-center justify-center">
+        <svg class="w-9 h-9 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <h3 class="text-navy font-black text-lg">تأكيد تسليم الحقيبة</h3>
+      <p class="text-navy/60 text-sm mt-1">هل أنت متأكد من إتمام عملية التسليم؟</p>
+    </div>
+    <div id="confirm-details" class="bg-bg rounded-xl p-4 mb-4 text-sm space-y-1.5"></div>
+    <div class="grid grid-cols-2 gap-3">
+      <button onclick="closeModal('confirm-modal')" class="bg-slate-100 hover:bg-slate-200 text-navy font-bold py-3 rounded-xl transition-colors">إلغاء</button>
+      <button onclick="finalizeDelivery()" class="btn-success text-white font-black py-3 rounded-xl">تأكيد التسليم ✅</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div id="export-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center modal-overlay p-4" onclick="closeModal('export-modal')">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-navy font-black text-lg">تصدير تقرير المنظومة</h3>
+      <button onclick="closeModal('export-modal')" class="text-navy/40 hover:text-navy text-xl font-bold transition-colors">✕</button>
+    </div>
+    <div class="space-y-3 mb-5">
+      <div class="flex items-center justify-between bg-bg rounded-xl p-3">
+        <span class="text-navy font-bold text-sm">📊 تقرير Excel الكامل</span>
+        <button onclick="downloadReport('excel'); closeModal('export-modal')" class="bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-green-700 transition-colors">تنزيل</button>
+      </div>
+      <div class="flex items-center justify-between bg-bg rounded-xl p-3">
+        <span class="text-navy font-bold text-sm">📄 تقرير PDF للطباعة</span>
+        <button onclick="downloadReport('pdf'); closeModal('export-modal')" class="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors">تنزيل</button>
+      </div>
+      <div class="flex items-center justify-between bg-bg rounded-xl p-3">
+        <span class="text-navy font-bold text-sm">🗂 تصدير JSON للأنظمة</span>
+        <button onclick="downloadReport('json'); closeModal('export-modal')" class="bg-sky text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-sky-dark transition-colors">تنزيل</button>
+      </div>
+    </div>
+    <div class="bg-bg rounded-xl p-3 text-xs text-navy/60 text-center">
+      آخر تحديث: <span id="export-time"></span>
+    </div>
+  </div>
+</div>
+
+<!-- =================== JAVASCRIPT =================== -->
+<script>
+// ============================================================
+// DATABASE SETUP
+// ============================================================
+const FLIGHTS = [
+  { code: '3G 410', dest: 'جدة', icon: '✈️' },
+  { code: '3G 202', dest: 'الرياض', icon: '✈️' },
+  { code: '3G 105', dest: 'الخرطوم', icon: '✈️' },
+  { code: '3G 770', dest: 'دبي', icon: '✈️' },
+  { code: '3G 315', dest: 'القاهرة', icon: '✈️' },
+  { code: '3G 580', dest: 'بيروت', icon: '✈️' },
+];
+const COLORS = ['أسود', 'أزرق داكن', 'أحمر', 'رمادي', 'بني'];
+const MATERIALS = ['قماش', 'فايبر صلب', 'جلد'];
+const SIZES = ['صغيرة', 'متوسطة', 'كبيرة'];
+const COLOR_DOTS = {
+  'أسود': 'bg-gray-900',
+  'أزرق داكن': 'bg-blue-900',
+  'أحمر': 'bg-red-600',
+  'رمادي': 'bg-gray-400',
+  'بني': 'bg-amber-800',
+};
+
+function seededRand(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+
+// Generate 400 bags
+const lost_bags_db = [];
+const rng = seededRand(42);
+for (let i = 1; i <= 400; i++) {
+  const f = FLIGHTS[Math.floor(rng() * FLIGHTS.length)];
+  const color = COLORS[Math.floor(rng() * COLORS.length)];
+  const material = MATERIALS[Math.floor(rng() * MATERIALS.length)];
+  const size = SIZES[Math.floor(rng() * SIZES.length)];
+  const weight = (10 + Math.floor(rng() * 22)) + ' كجم';
+  const id = 'TRC-REC-' + String(i).padStart(3, '0');
+  
+  // توليد تاريخ عثور عشوائي
+  const day = 1 + Math.floor(rng() * 12);
+  const hour = Math.floor(rng() * 24);
+  const min = Math.floor(rng() * 60);
+  const found_date = `2026-06-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+
+  lost_bags_db.push({
+    bag_id: id,
+    estimated_flight: f.code + ' - ' + f.dest,
+    flight_code: f.code,
+    color,
+    material,
+    size,
+    weight,
+    found_date,
+    status: 'في المستودع',
+    matched_claim: null,
+  });
+}
+
+// 15 passenger claims
+const passenger_claims = [
+  { claim_id: 'PIR-001', name: 'أحمد محمد العوضي', phone: '+966501234567', flight: '3G 410', color: 'أسود', material: 'فايبر صلب', size: 'كبيرة', desc: 'حقيبة سوداء صلبة كبيرة، بها ملصق اسم باللون الأصفر', nationality: 'سعودي' },
+  { claim_id: 'PIR-002', name: 'فاطمة علي الحسن', phone: '+249912345678', flight: '3G 105', color: 'أزرق داكن', material: 'قماش', size: 'متوسطة', desc: 'حقيبة قماشية زرقاء داكنة بحجم متوسط مع سحاب فضي', nationality: 'سوداني' },
+  { claim_id: 'PIR-003', name: 'خالد إبراهيم النمر', phone: '+966557890123', flight: '3G 202', color: 'رمادي', material: 'فايبر صلب', size: 'كبيرة', desc: 'تروللي رمادي صلب كبير، ماركة Samsonite', nationality: 'سعودي' },
+  { claim_id: 'PIR-004', name: 'مريم أحمد الشريف', phone: '+971501234567', flight: '3G 770', color: 'بني', material: 'جلد', size: 'متوسطة', desc: 'حقيبة جلدية بنية اللون بحجم متوسط، ماركة Louis Vuitton', nationality: 'إماراتي' },
+  { claim_id: 'PIR-005', name: 'عمر عبد الله قاسم', phone: '+966500987654', flight: '3G 410', color: 'أسود', material: 'قماش', size: 'صغيرة', desc: 'حقيبة قماشية سوداء صغيرة، بها عجلتان أمامية وخلفية', nationality: 'سعودي' },
+  { claim_id: 'PIR-006', name: 'نور الدين موسى أحمد', phone: '+249900456789', flight: '3G 105', color: 'أحمر', material: 'فايبر صلب', size: 'متوسطة', desc: 'حقيبة حمراء صلبة متوسطة، بها شريط أبيض على الجانب', nationality: 'سوداني' },
+  { claim_id: 'PIR-007', name: 'سارة محمد الكوت', phone: '+965501234567', flight: '3G 202', color: 'أسود', material: 'فايبر صلب', size: 'كبيرة', desc: 'حقيبة سوداء صلبة كبيرة بأقفال رقمية', nationality: 'كويتي' },
+  { claim_id: 'PIR-008', name: 'يوسف عبد الرحمن قدور', phone: '+213551234567', flight: '3G 315', color: 'رمادي', material: 'قماش', size: 'كبيرة', desc: 'حقيبة قماشية رمادية كبيرة بعجلات أربع', nationality: 'جزائري' },
+  { claim_id: 'PIR-009', name: 'لينا سامي الجبر', phone: '+961701234567', flight: '3G 580', color: 'بني', material: 'قماش', size: 'صغيرة', desc: 'حقيبة قماشية بنية صغيرة بها نمط هندسي', nationality: 'لبناني' },
+  { claim_id: 'PIR-010', name: 'تاج الدين إبراهيم مصطفى', phone: '+249912000111', flight: '3G 105', color: 'أسود', material: 'قماش', size: 'كبيرة', desc: 'حقيبة قماشية سوداء كبيرة، ماركة Delsey، بمقبض ممتد حمراء', nationality: 'سوداني' },
+  { claim_id: 'PIR-011', name: 'عبد العزيز الفهد', phone: '+966556789012', flight: '3G 202', color: 'أزرق داكن', material: 'فايبر صلب', size: 'كبيرة', desc: 'حقيبة زرقاء داكنة صلبة كبيرة بأقفال TSA', nationality: 'سعودي' },
+  { claim_id: 'PIR-012', name: 'هند عمر المطيري', phone: '+965502345678', flight: '3G 770', color: 'أحمر', material: 'قماش', size: 'متوسطة', desc: 'حقيبة قماشية حمراء متوسطة، بها شريط لاصق باسمها', nationality: 'كويتي' },
+  { claim_id: 'PIR-013', name: 'بكر أحمد الزبيدي', phone: '+967711234567', flight: '3G 410', color: 'رمادي', material: 'فايبر صلب', size: 'متوسطة', desc: 'حقيبة رمادية صلبة متوسطة، بها خدش صغير على الجانب الأيمن', nationality: 'يمني' },
+  { claim_id: 'PIR-014', name: 'رانيا خالد السيد', phone: '+201001234567', flight: '3G 315', color: 'أسود', material: 'جلد', size: 'صغيرة', desc: 'حقيبة جلدية سوداء صغيرة، تحمل حرف R مطرز باللون الذهبي', nationality: 'مصري' },
+  { claim_id: 'PIR-015', name: 'محمود علي حاتم', phone: '+966508765432', flight: '3G 202', color: 'بني', material: 'فايبر صلب', size: 'كبيرة', desc: 'حقيبة بنية صلبة كبيرة بأقفال مدمجة وعجلات 360 درجة', nationality: 'سعودي' },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  bags: [...lost_bags_db],
+  filteredBags: [...lost_bags_db],
+  currentPage: 1,
+  pageSize: 20,
+  selectedBag: null,
+  selectedClaim: null,
+  colorFilter: 'الكل',
+  flightFilter: 'الكل',
+  statusFilter: 'الكل',
+  searchQuery: '',
+};
+
+// ============================================================
+// MATCHING ENGINE
+// ============================================================
+function computeMatchScore(bag, claim) {
+  let score = 0;
+  const bagFlight = bag.flight_code || bag.estimated_flight.split(' - ')[0];
+  if (bagFlight === claim.flight) score += 50;
+  if (bag.color === claim.color) score += 30;
+  if (bag.material === claim.material) score += 20;
+  return score;
+}
+
+function getTopMatches(bag) {
+  return passenger_claims
+    .map(c => ({ ...c, score: computeMatchScore(bag, c) }))
+    .sort((a, b) => b.score - a.score);
+}
+
+// ============================================================
+// FILTERS
+// ============================================================
+function setColorFilter(color, el) {
+  state.colorFilter = color;
+  document.querySelectorAll('#color-filters .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const searchId = document.getElementById('search-id').value.trim().toLowerCase();
+  const flight = document.getElementById('flight-filter').value;
+  const size = document.getElementById('size-filter').value;
+  const maxWeight = document.getElementById('weight-filter').value;
+  const status = document.getElementById('status-filter').value;
+
+  state.searchQuery = q;
+  state.flightFilter = flight;
+  state.statusFilter = status;
+  state.currentPage = 1;
+
+  state.filteredBags = state.bags.filter(bag => {
+    // 1. Color filter
+    const matchColor = state.colorFilter === 'الكل' || bag.color === state.colorFilter;
+    
+    // 2. Flight filter
+    const matchFlight = flight === 'الكل' || bag.estimated_flight.includes(flight);
+    
+    // 3. Status filter
+    const matchStatus = status === 'الكل' || bag.status === status;
+    
+    // 4. Size filter
+    const matchSize = size === 'الكل' || bag.size === size;
+    
+    // 5. Weight filter
+    let matchWeight = true;
+    if (maxWeight !== 'الكل') {
+      const bagWeightNum = parseFloat(bag.weight);
+      matchWeight = bagWeightNum <= parseFloat(maxWeight);
+    }
+    
+    // 6. ID Specific filter
+    const matchId = !searchId || bag.bag_id.toLowerCase().includes(searchId);
+
+    // 7. General text search (Flight dest, color, material, weight)
+    const matchSearch = !q ||
+      bag.color.includes(q) ||
+      bag.material.includes(q) ||
+      bag.estimated_flight.includes(q) ||
+      bag.status.includes(q);
+
+    return matchColor && matchFlight && matchStatus && matchSize && matchWeight && matchId && matchSearch;
+  });
+
+  renderTable();
+  updateShowingLabel();
+}
+
+// ============================================================
+// TABLE RENDERING
+// ============================================================
+function renderTable() {
+  const tbody = document.getElementById('bags-table-body');
+  const start = (state.currentPage - 1) * state.pageSize;
+  const pageItems = state.filteredBags.slice(start, start + state.pageSize);
+
+  if (pageItems.length === 0) {
+    tbody.innerHTML = `
+      <div class="empty-state flex flex-col items-center justify-center py-16 text-center">
+        <div class="w-14 h-14 mb-3 rounded-full bg-slate-100 flex items-center justify-center text-2xl">🔍</div>
+        <p class="text-navy/60 font-bold text-sm">لا توجد نتائج مطابقة</p>
+        <p class="text-navy/40 text-xs mt-1">حاول تعديل فلاتر البحث</p>
+      </div>`;
+    renderPagination();
+    return;
+  }
+
+  tbody.innerHTML = pageItems.map(bag => {
+    const isSelected = state.selectedBag && state.selectedBag.bag_id === bag.bag_id;
+    const isDelivered = bag.status === 'تم التسليم';
+    const dotClass = COLOR_DOTS[bag.color] || 'bg-gray-400';
+    return `
+      <div class="bag-row grid items-center px-4 py-3 text-xs font-medium ${isSelected ? 'selected' : ''} ${isDelivered ? 'delivered' : ''}"
+        style="grid-template-columns: 0.6fr 1.4fr 1.7fr 1fr 1fr 1fr 1.2fr; background: ${isSelected ? 'rgba(50,140,193,0.13)' : (isDelivered ? '#f9fafb' : 'white')}"
+        onclick="selectBag('${bag.bag_id}')">
+        <div class="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-lg overflow-hidden relative shadow-sm">
+          <div class="absolute inset-0 opacity-20 ${dotClass}"></div>
+          🧳
+        </div>
+        <span class="font-black text-navy text-[11px]">${bag.bag_id}</span>
+        <span class="text-navy/70 text-[11px]">✈️ ${bag.estimated_flight}</span>
+        <span class="flex items-center gap-1.5 text-[11px]">
+          <span class="w-2.5 h-2.5 rounded-full ${dotClass} shrink-0"></span>
+          ${bag.color}
+        </span>
+        <span class="text-navy/70 text-[11px]">${bag.material}</span>
+        <span class="text-navy/50 text-[11px]">${bag.weight}</span>
+        <span>
+          ${isDelivered
+            ? '<span class="badge-delivered text-[10px] font-black px-2 py-1 rounded-full">✅ تم التسليم</span>'
+            : '<span class="badge-warehouse text-[10px] font-bold px-2 py-1 rounded-full border border-sky/20">📦 في المستودع</span>'
+          }
+        </span>
+      </div>`;
+  }).join('');
+
+  renderPagination();
+}
+
+function renderPagination() {
+  const totalPages = Math.ceil(state.filteredBags.length / state.pageSize);
+  const container = document.getElementById('pagination-btns');
+  const pageInfo = document.getElementById('page-info');
+  pageInfo.textContent = `صفحة ${state.currentPage} من ${totalPages}`;
+
+  let btns = '';
+  btns += `<button class="pagination-btn w-8 h-8 rounded-lg border border-slate-200 text-xs font-bold ${state.currentPage === 1 ? 'disabled' : ''}" ${state.currentPage === 1 ? 'disabled' : ''} onclick="goPage(${state.currentPage - 1})">›</button>`;
+
+  const range = getPageRange(state.currentPage, totalPages);
+  range.forEach(p => {
+    if (p === '...') {
+      btns += `<span class="w-8 h-8 flex items-center justify-center text-navy/40 text-xs">…</span>`;
+    } else {
+      btns += `<button class="pagination-btn w-8 h-8 rounded-lg border border-slate-200 text-xs font-bold ${p === state.currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+    }
+  });
+
+  btns += `<button class="pagination-btn w-8 h-8 rounded-lg border border-slate-200 text-xs font-bold ${state.currentPage === totalPages ? 'disabled' : ''}" ${state.currentPage === totalPages ? 'disabled' : ''} onclick="goPage(${state.currentPage + 1})">‹</button>`;
+  container.innerHTML = btns;
+}
+
+function getPageRange(current, total) {
+  if (total <= 7) return Array.from({length: total}, (_, i) => i + 1);
+  if (current <= 4) return [1,2,3,4,5,'...',total];
+  if (current >= total - 3) return [1,'...',total-4,total-3,total-2,total-1,total];
+  return [1,'...',current-1,current,current+1,'...',total];
+}
+
+function goPage(p) {
+  const totalPages = Math.ceil(state.filteredBags.length / state.pageSize);
+  if (p < 1 || p > totalPages) return;
+  state.currentPage = p;
+  renderTable();
+  document.getElementById('bags-table-body').scrollTop = 0;
+}
+
+function updateShowingLabel() {
+  document.getElementById('showing-label').textContent = `عرض ${state.filteredBags.length} حقيبة`;
+}
+
+// ============================================================
+// BAG SELECTION & MATCHING
+// ============================================================
+function selectBag(bagId) {
+  state.selectedBag = state.bags.find(b => b.bag_id === bagId);
+  if (!state.selectedBag) return;
+  state.selectedClaim = null;
+  renderTable();
+  renderMatchPanel();
+}
+
+function clearSelection() {
+  state.selectedBag = null;
+  state.selectedClaim = null;
+  renderTable();
+  document.getElementById('match-default').classList.remove('hidden');
+  document.getElementById('match-result').classList.add('hidden');
+}
+
+function renderMatchPanel() {
+  if (!state.selectedBag) return;
+  const bag = state.selectedBag;
+  document.getElementById('match-default').classList.add('hidden');
+  document.getElementById('match-result').classList.remove('hidden');
+  document.getElementById('match-result').classList.add('animate-fade-in');
+
+  // Bag info
+  const infoEl = document.getElementById('selected-bag-info');
+  const dotClass = COLOR_DOTS[bag.color] || 'bg-gray-400';
+  infoEl.innerHTML = `
+    <div class="col-span-2 flex items-center gap-3 mb-1 p-3 bg-white/5 rounded-xl border border-white/10">
+      <div class="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center text-3xl relative overflow-hidden shrink-0 shadow-inner">
+        <div class="absolute inset-0 opacity-30 ${dotClass}"></div>
+        🧳
+      </div>
+      <div>
+        <div class="text-white/60 text-[10px] font-bold mb-0.5">صورة الحقيبة (مؤقتة)</div>
+        <div class="text-white font-black text-sm">${bag.bag_id}</div>
+        <div class="text-white/80 text-[10px] mt-1">🕒 وقت العثور: <span class="font-bold">${bag.found_date}</span></div>
+      </div>
+    </div>
+    <div class="bg-white/10 rounded-lg p-2.5 text-xs">
+      <div class="text-white/60 mb-0.5">الرحلة</div>
+      <div class="text-white font-bold text-sm">✈️ ${bag.estimated_flight}</div>
+    </div>
+    <div class="bg-white/10 rounded-lg p-2.5 text-xs flex items-center gap-2">
+      <span class="w-3 h-3 rounded-full ${dotClass} shrink-0"></span>
+      <div>
+        <div class="text-white/60 mb-0.5">اللون</div>
+        <div class="text-white font-bold">${bag.color}</div>
+      </div>
+    </div>
+    <div class="bg-white/10 rounded-lg p-2.5 text-xs">
+      <div class="text-white/60 mb-0.5">المادة</div>
+      <div class="text-white font-bold">${bag.material}</div>
+    </div>
+    <div class="bg-white/10 rounded-lg p-2.5 text-xs">
+      <div class="text-white/60 mb-0.5">الوزن / الحجم</div>
+      <div class="text-white font-bold">${bag.weight} • ${bag.size}</div>
+    </div>
+  `;
+
+  // Matches
+  const matches = getTopMatches(bag);
+  const matchesList = document.getElementById('matches-list');
+  if (matches.length === 0) {
+    matchesList.innerHTML = `<div class="text-center text-navy/40 text-sm py-4">لا توجد مطابقات</div>`;
+    return;
+  }
+
+  matchesList.innerHTML = matches.map((claim, idx) => {
+    const score = claim.score;
+    const scoreColor = score >= 80 ? '#2ecc71' : score >= 50 ? '#f39c12' : '#e74c3c';
+    const scoreBg = score >= 80 ? 'bg-success/10 border-success/30' : score >= 50 ? 'bg-warn/10 border-warn/30' : 'bg-danger/10 border-danger/30';
+    const isTopMatch = idx === 0 && score > 0;
+    return `
+      <div class="match-card rounded-xl p-3.5 cursor-pointer ${scoreBg} ${state.selectedClaim && state.selectedClaim.claim_id === claim.claim_id ? 'ring-2 ring-sky' : ''}"
+        onclick="selectClaim('${claim.claim_id}')">
+        <div class="flex items-start justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-navy/10 flex items-center justify-center text-sm font-black text-navy shrink-0">${claim.name.charAt(0)}</div>
+            <div>
+              <div class="text-navy font-black text-xs flex items-center gap-1">
+                ${claim.name}
+                ${isTopMatch ? '<span class="text-[9px] bg-success text-white px-1.5 py-0.5 rounded-full font-black">🏆 الأفضل</span>' : ''}
+              </div>
+              <div class="text-navy/50 text-[10px]">${claim.claim_id} • ${claim.nationality}</div>
+            </div>
+          </div>
+          <div class="text-right shrink-0">
+            <div class="font-black text-base" style="color:${scoreColor}">${score}%</div>
+            <div class="text-navy/40 text-[9px]">تطابق</div>
+          </div>
+        </div>
+        <!-- Score Bar -->
+        <div class="bg-white/50 rounded-full h-1.5 mb-2 overflow-hidden">
+          <div class="score-bar h-full rounded-full" style="width:${score}%; background:${scoreColor}"></div>
+        </div>
+        <!-- Details -->
+        <div class="grid grid-cols-3 gap-1 text-[10px]">
+          <div class="bg-white/60 rounded-lg p-1.5 text-center">
+            <div class="text-navy/50">الرحلة</div>
+            <div class="font-bold text-navy">${claim.flight}</div>
+          </div>
+          <div class="bg-white/60 rounded-lg p-1.5 text-center">
+            <div class="text-navy/50">اللون</div>
+            <div class="font-bold text-navy">${claim.color}</div>
+          </div>
+          <div class="bg-white/60 rounded-lg p-1.5 text-center">
+            <div class="text-navy/50">المادة</div>
+            <div class="font-bold text-navy">${claim.material}</div>
+          </div>
+        </div>
+        <div class="mt-2 text-[10px] text-navy/50 flex items-center gap-1">
+          📞 ${claim.phone}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Auto-select top match
+  if (matches.length > 0 && matches[0].score > 0) {
+    state.selectedClaim = matches[0];
+  }
+
+  // Update confirm button
+  const confirmBtn = document.getElementById('confirm-btn');
+  if (bag.status === 'تم التسليم') {
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg> طباعة إيصال استلام 🖨️`;
+    confirmBtn.className = 'w-full text-white font-black text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg bg-navy hover:bg-navy-dark transition-colors';
+    confirmBtn.onclick = () => printReceipt();
+  } else {
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> تأكيد المطابقة والتسليم عبر Tarco ReConnect ✅`;
+    confirmBtn.className = 'btn-success w-full text-white font-black text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg';
+    confirmBtn.onclick = () => confirmDelivery();
+  }
+}
+
+function selectClaim(claimId) {
+  state.selectedClaim = passenger_claims.find(c => c.claim_id === claimId);
+  renderMatchPanel();
+}
+
+// ============================================================
+// DELIVERY CONFIRMATION
+// ============================================================
+function confirmDelivery() {
+  if (!state.selectedBag || state.selectedBag.status === 'تم التسليم') return;
+  const claim = state.selectedClaim;
+  const bag = state.selectedBag;
+
+  const detailsEl = document.getElementById('confirm-details');
+  detailsEl.innerHTML = `
+    <div class="flex justify-between items-center py-1 border-b border-slate-100">
+      <span class="text-navy/60 text-xs">الحقيبة:</span>
+      <span class="text-navy font-black text-xs">${bag.bag_id}</span>
+    </div>
+    <div class="flex justify-between items-center py-1 border-b border-slate-100">
+      <span class="text-navy/60 text-xs">الراكب:</span>
+      <span class="text-navy font-black text-xs">${claim ? claim.name : 'غير محدد'}</span>
+    </div>
+    <div class="flex justify-between items-center py-1 border-b border-slate-100">
+      <span class="text-navy/60 text-xs">الهاتف:</span>
+      <span class="text-navy font-black text-xs">${claim ? claim.phone : 'غير متاح'}</span>
+    </div>
+    <div class="flex justify-between items-center py-1">
+      <span class="text-navy/60 text-xs">نسبة التطابق:</span>
+      <span class="font-black text-xs ${claim ? (claim.score >= 80 ? 'text-success' : claim.score >= 50 ? 'text-warn' : 'text-danger') : 'text-navy'}">${claim ? claim.score + '%' : 'N/A'}</span>
+    </div>
+  `;
+
+  document.getElementById('confirm-modal').classList.remove('hidden');
+}
+
+function finalizeDelivery() {
+  const bag = state.selectedBag;
+  const claim = state.selectedClaim;
+  if (!bag) return;
+
+  // Update status
+  const bagInDb = state.bags.find(b => b.bag_id === bag.bag_id);
+  if (bagInDb) {
+    bagInDb.status = 'تم التسليم';
+    bagInDb.matched_claim = claim ? claim.claim_id : null;
+    state.selectedBag = bagInDb;
+  }
+
+  closeModal('confirm-modal');
+  updateStats();
+  renderTable();
+  renderMatchPanel();
+  renderQuickStats();
+
+  showNotification(`✅ تم تسليم الحقيبة ${bag.bag_id} بنجاح${claim ? ' للراكب ' + claim.name : ''}`, 'success');
+}
+
+function printReceipt() {
+  const bag = state.selectedBag;
+  let claimInfo = bag.matched_claim ? passenger_claims.find(c => c.claim_id === bag.matched_claim) : null;
+  
+  const printWindow = window.open('', '_blank', 'width=400,height=600');
+  printWindow.document.write(`
+    <html dir="rtl" lang="ar">
+    <head>
+      <title>إيصال استلام حقيبة | Tarco ReConnect</title>
+      <style>
+        body { font-family: Tahoma, Arial, sans-serif; padding: 20px; color: #333; }
+        .header { text-align: center; border-bottom: 2px dashed #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+        .title { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
+        .row { margin-bottom: 10px; font-size: 14px; }
+        .label { font-weight: bold; color: #555; }
+        .footer { margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px; font-size: 12px; color: #777; }
+        .signature { margin-top: 30px; display: flex; justify-content: space-between; }
+        .sig-box { width: 45%; border-top: 1px solid #333; padding-top: 5px; text-align: center; }
+      </style>
+    </head>
+    <body onload="window.print(); window.close();">
+      <div class="header">
+        <div class="title">Tarco Aviation</div>
+        <div>منظومة إعادة التواصل - ReConnect</div>
+        <h3>إيصال استلام أمتعة مفقودة</h3>
+      </div>
+      
+      <div class="row"><span class="label">تاريخ التسليم:</span> ${new Date().toLocaleString('ar-SA')}</div>
+      <div class="row"><span class="label">رقم الحقيبة:</span> ${bag.bag_id}</div>
+      <div class="row"><span class="label">تاريخ العثور عليها:</span> ${bag.found_date}</div>
+      <div class="row"><span class="label">الرحلة:</span> ${bag.estimated_flight}</div>
+      
+      <h4 style="margin-top:20px; border-bottom:1px solid #eee; padding-bottom:5px;">بيانات المستلم (الراكب)</h4>
+      <div class="row"><span class="label">الاسم:</span> ${claimInfo ? claimInfo.name : 'ـــــــــــــــــــــــــ'}</div>
+      <div class="row"><span class="label">رقم البلاغ (PIR):</span> ${claimInfo ? claimInfo.claim_id : 'ـــــــــــــــــــــــــ'}</div>
+      <div class="row"><span class="label">الهاتف:</span> ${claimInfo ? claimInfo.phone : 'ـــــــــــــــــــــــــ'}</div>
+      
+      <div class="signature">
+        <div class="sig-box">توقيع المستلم</div>
+        <div class="sig-box">توقيع الموظف</div>
+      </div>
+      
+      <div class="footer">
+        نشكركم لاختياركم تاركو للطيران. نتمنى لكم رحلات سعيدة.
+      </div>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function updateStats() {
+  const delivered = state.bags.filter(b => b.status === 'تم التسليم').length;
+  const remaining = 400 - delivered;
+  const pct = Math.round((delivered / 400) * 100);
+
+  document.getElementById('stat-delivered').textContent = delivered;
+  document.getElementById('stat-remaining').textContent = remaining;
+  document.getElementById('stat-percent').textContent = pct + '%';
+
+  // Progress ring
+  const circumference = 2 * Math.PI * 20; // r=20
+  const offset = circumference - (pct / 100) * circumference;
+  document.getElementById('progress-ring-circle').style.strokeDashoffset = offset;
+
+  // Animate delivered counter
+  const el = document.getElementById('stat-delivered');
+  el.classList.remove('counter-badge');
+  void el.offsetWidth;
+  el.classList.add('counter-badge');
+}
+
+function renderQuickStats() {
+  const container = document.getElementById('quick-stats');
+  const byColor = {};
+  const byStatus = {};
+  COLORS.forEach(c => byColor[c] = 0);
+  ['في المستودع', 'تم التسليم'].forEach(s => byStatus[s] = 0);
+  state.bags.forEach(b => {
+    if (byColor[b.color] !== undefined) byColor[b.color]++;
+    if (byStatus[b.status] !== undefined) byStatus[b.status]++;
+  });
+
+  const colorBars = COLORS.map(c => {
+    const pct = Math.round((byColor[c] / 400) * 100);
+    const dotClass = COLOR_DOTS[c];
+    return `
+      <div class="flex items-center gap-2 text-xs">
+        <span class="w-2.5 h-2.5 rounded-full ${dotClass} shrink-0"></span>
+        <span class="text-navy/60 flex-1">${c}</span>
+        <div class="w-20 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+          <div class="h-full rounded-full bg-sky" style="width:${pct}%"></div>
+        </div>
+        <span class="text-navy font-bold w-6 text-left">${byColor[c]}</span>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = colorBars;
+}
+
+// ============================================================
+// MODALS & NOTIFICATIONS
+// ============================================================
+function showWhatsAppModal() {
+  document.getElementById('modal-claims-count').textContent = passenger_claims.length;
+  document.getElementById('whatsapp-modal').classList.remove('hidden');
+}
+function showAIModal() {
+  document.getElementById('ai-modal').classList.remove('hidden');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+function exportData() {
+  document.getElementById('export-time').textContent = new Date().toLocaleString('ar-SA');
+  document.getElementById('export-modal').classList.remove('hidden');
+}
+
+function sendWhatsApp() {
+  closeModal('whatsapp-modal');
+  showNotification(`📱 تم إرسال الكتالوج لـ ${passenger_claims.length} راكب عبر WhatsApp API بنجاح!`, 'success');
+}
+
+function downloadReport(type) {
+  const msgs = {
+    excel: '📊 جاري تحضير تقرير Excel...',
+    pdf: '📄 جاري إنشاء تقرير PDF...',
+    json: '🗂 جاري تصدير ملف JSON...',
+  };
+  showNotification(msgs[type] + ' (هذه نسخة تجريبية)', 'info');
+}
+
+function showNotification(msg, type = 'success') {
+  const container = document.getElementById('notification-container');
+  const colors = {
+    success: 'bg-success text-white',
+    info: 'bg-sky text-white',
+    warn: 'bg-warn text-white',
+    error: 'bg-danger text-white',
+  };
+  const id = 'notif-' + Date.now();
+  const el = document.createElement('div');
+  el.id = id;
+  el.className = `notification pointer-events-auto shadow-xl rounded-xl px-4 py-3 max-w-xs text-sm font-bold ${colors[type] || colors.info}`;
+  el.innerHTML = msg;
+  container.appendChild(el);
+  setTimeout(() => { el.remove(); }, 3500);
+}
+
+// ============================================================
+// KEYBOARD SHORTCUTS
+// ============================================================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    ['whatsapp-modal','ai-modal','confirm-modal','export-modal'].forEach(id => {
+      document.getElementById(id).classList.add('hidden');
+    });
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    e.preventDefault();
+    document.getElementById('search-input').focus();
+  }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  state.filteredBags = [...state.bags];
+  renderTable();
+  updateStats();
+  renderQuickStats();
+  updateShowingLabel();
+
+  // Welcome notification
+  setTimeout(() => {
+    showNotification('🚀 مرحباً بك في Tarco ReConnect! انقر على أي حقيبة لبدء المطابقة.', 'info');
+  }, 800);
+}
+
+init();
+</script>
+</body>
+</html>
